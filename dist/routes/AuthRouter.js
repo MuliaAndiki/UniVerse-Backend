@@ -21,6 +21,7 @@ class AuthRouter {
         this.authRouter.post("/send-otp-register", AuthController_1.default.sendOtpRegister);
         this.authRouter.put("/reset-password", AuthController_1.default.ResetPassword);
         this.authRouter.post("/forgot-phoneNumber", AuthController_1.default.PickForgotPasswordByPhoneNumber);
+        this.authRouter.post("/google", AuthController_1.default.loginGoogle);
     }
 }
 exports.default = new AuthRouter().authRouter;

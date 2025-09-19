@@ -2,6 +2,9 @@ import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import authRouter from "./routes/AuthRouter";
+import nodeCron from "node-cron";
+import AuthController from "./controllers/AuthController";
+import CampusRouter from "./routes/CampusRouter";
 
 class App {
   public app: Application;
@@ -10,6 +13,7 @@ class App {
     this.app = express();
     this.middlewares();
     this.routes();
+    this.runCron();
   }
 
   private middlewares(): void {
@@ -20,6 +24,7 @@ class App {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use("/api/auth", authRouter);
+    this.app.use("/api/campus", CampusRouter);
   }
 
   private routes(): void {
@@ -28,6 +33,12 @@ class App {
         message: "Hello World with TypeScript!",
         timestamp: new Date().toISOString(),
       });
+    });
+  }
+  private runCron(): void {
+    nodeCron.schedule("0 1 * * *", async () => {
+      console.log("[CRON] Memulai pengecekan akun tidak verifikasi...");
+      await AuthController.deleteAkun();
     });
   }
 }

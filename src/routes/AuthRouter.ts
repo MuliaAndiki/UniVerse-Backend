@@ -22,6 +22,7 @@ class AuthRouter {
       "/forgot-phoneNumber",
       AuthController.PickForgotPasswordByPhoneNumber
     );
+    this.authRouter.post("/google", AuthController.loginGoogle);
   }
 }
 

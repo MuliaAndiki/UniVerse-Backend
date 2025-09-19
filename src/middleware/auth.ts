@@ -56,7 +56,7 @@ export const verifyToken = async (
 
     req.user = {
       _id: user._id,
-      fullname: user.fullname,
+      fullname: user.fullname!,
       email: user.email,
       role: user.role,
     };

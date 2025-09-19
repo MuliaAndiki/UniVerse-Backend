@@ -15,6 +15,7 @@ import {
   PickResetPassword,
   PickSendOtpRegister,
   PickForgotPasswordByNomorHp,
+  PickLoginGoogle,
 } from "../types/auth.types";
 import { verifyToken } from "../middleware/auth";
 import { env } from "../utils/env.config";
@@ -22,6 +23,13 @@ import { generateOtp } from "../utils/generateOtp";
 import { sendOTPEmail } from "../utils/mailer";
 import { uploadCloudinary } from "../utils/uploadClodinary";
 import { uploadImages } from "../middleware/multer";
+import { OAuth2Client } from "google-auth-library";
+import { Document } from "mongoose";
+
+const CLIENT_ID = env.GOOGLE_CLIENT_ID!;
+const JWT_SECRET = env.JWT_SECRET!;
+
+const CLIENT = new OAuth2Client(CLIENT_ID);
 
 class AuthController {
   public register = async (req: Request, res: Response): Promise<void> => {
@@ -527,6 +535,71 @@ class AuthController {
       console.error("[CRON] Gagal hapus akun:", error);
     }
   };
+  public loginGoogle = [
+    verifyToken,
+    async (req: Request, res: Response): Promise<any> => {
+      try {
+        const { tokenId } = req.body;
+        if (!tokenId) {
+          res.status(404).json({
+            status: 404,
+            message: "Token Id Invalid",
+          });
+          return;
+        }
+        const ticket = await CLIENT.verifyIdToken({
+          idToken: tokenId,
+          audience: CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload?.email || !payload) {
+          res.status(400).json({
+            status: 400,
+            message: "tokenId isRequored",
+          });
+          return;
+        }
+        let user: (IAuth & Document) | null = await Auth.findOne({
+          email: payload.email,
+        });
+        if (!user) {
+          user = (await Auth.create({
+            email: payload.email,
+            fullname: payload.name,
+            fotoProfile: payload.picture,
+            role: "user",
+            password: "-",
+            gender: true,
+            methotPayment: "-",
+            phoneNumber: "-",
+            otp: "-",
+            isVerified: true,
+          })) as IAuth;
+        }
+        const JwtPayload: PickLoginGoogle = {
+          email: user?.email || "",
+          fullname: user?.fullname || "",
+          fotoProfile: user?.fotoProfile || "",
+          role: user?.role || "",
+        };
+        const token = jwt.sign(JwtPayload, JWT_SECRET, { expiresIn: "7d" });
+
+        res.status(200).json({
+          status: 200,
+          message: "Login berhasil",
+          token,
+          user: JwtPayload,
+        });
+      } catch (error) {
+        res.status(500).json({
+          status: 500,
+          message: "Server Internal Error",
+          error: error instanceof Error ? error.message : error,
+        });
+      }
+    },
+  ];
 }
 
 export default new AuthController();

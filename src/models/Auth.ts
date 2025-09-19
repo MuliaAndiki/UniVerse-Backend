@@ -20,13 +20,11 @@ const AuthSchema = new mongoose.Schema(
     },
     fullname: {
       type: String,
-      required: true,
     },
     role: {
       type: String,
       enum: RoleConstanst,
       default: "user",
-      required: true,
     },
     fotoProfile: {
       type: String,
@@ -60,14 +58,6 @@ const AuthSchema = new mongoose.Schema(
     },
     otpExpires: {
       type: Date,
-    },
-    lat: {
-      type: Number,
-      default: null,
-    },
-    lng: {
-      type: Number,
-      default: null,
     },
   },
   { timestamps: true }

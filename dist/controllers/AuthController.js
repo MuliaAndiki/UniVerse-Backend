@@ -12,6 +12,10 @@ const generateOtp_1 = require("../utils/generateOtp");
 const mailer_1 = require("../utils/mailer");
 const uploadClodinary_1 = require("../utils/uploadClodinary");
 const multer_1 = require("../middleware/multer");
+const google_auth_library_1 = require("google-auth-library");
+const CLIENT_ID = env_config_1.env.GOOGLE_CLIENT_ID;
+const JWT_SECRET = env_config_1.env.JWT_SECRET;
+const CLIENT = new google_auth_library_1.OAuth2Client(CLIENT_ID);
 class AuthController {
     constructor() {
         this.register = async (req, res) => {
@@ -447,6 +451,70 @@ class AuthController {
                 console.error("[CRON] Gagal hapus akun:", error);
             }
         };
+        this.loginGoogle = [
+            auth_1.verifyToken,
+            async (req, res) => {
+                try {
+                    const { tokenId } = req.body;
+                    if (!tokenId) {
+                        res.status(404).json({
+                            status: 404,
+                            message: "Token Id Invalid",
+                        });
+                        return;
+                    }
+                    const ticket = await CLIENT.verifyIdToken({
+                        idToken: tokenId,
+                        audience: CLIENT_ID,
+                    });
+                    const payload = ticket.getPayload();
+                    if (!payload?.email || !payload) {
+                        res.status(400).json({
+                            status: 400,
+                            message: "tokenId isRequored",
+                        });
+                        return;
+                    }
+                    let user = await Auth_1.default.findOne({
+                        email: payload.email,
+                    });
+                    if (!user) {
+                        user = (await Auth_1.default.create({
+                            email: payload.email,
+                            fullname: payload.name,
+                            fotoProfile: payload.picture,
+                            role: "user",
+                            password: "-",
+                            gender: true,
+                            methotPayment: "-",
+                            phoneNumber: "-",
+                            otp: "-",
+                            isVerified: true,
+                        }));
+                    }
+                    const JwtPayload = {
+                        email: user?.email || "",
+                        fullname: user?.fullname || "",
+                        fotoProfile: user?.fotoProfile || "",
+                        role: user?.role || "",
+                    };
+                    const token = jsonwebtoken_1.default.sign(JwtPayload, JWT_SECRET, { expiresIn: "7d" });
+                    res.status(200).json({
+                        status: 200,
+                        message: "Login berhasil",
+                        token,
+                        user: JwtPayload,
+                    });
+                }
+                catch (error) {
+                    res.status(500).json({
+                        status: 500,
+                        message: "Server Internal Error",
+                        error: error instanceof Error ? error.message : error,
+                    });
+                }
+            },
+        ];
     }
 }
 exports.default = new AuthController();

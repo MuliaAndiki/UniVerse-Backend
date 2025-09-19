@@ -23,13 +23,11 @@ const AuthSchema = new mongoose_1.default.Schema({
     },
     fullname: {
         type: String,
-        required: true,
     },
     role: {
         type: String,
         enum: role_1.RoleConstanst,
         default: "user",
-        required: true,
     },
     fotoProfile: {
         type: String,
@@ -63,14 +61,6 @@ const AuthSchema = new mongoose_1.default.Schema({
     },
     otpExpires: {
         type: Date,
-    },
-    lat: {
-        type: Number,
-        default: null,
-    },
-    lng: {
-        type: Number,
-        default: null,
     },
 }, { timestamps: true });
 exports.default = mongoose_1.default.model("Auth", AuthSchema);
