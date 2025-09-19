@@ -14,6 +14,13 @@ class AuthRouter {
         this.authRouter.post("/", AuthController_1.default.register);
         this.authRouter.post("/login", AuthController_1.default.login);
         this.authRouter.post("/logout", AuthController_1.default.logout);
+        this.authRouter.get("/profile", AuthController_1.default.getProfileByUser);
+        this.authRouter.put("/profile", AuthController_1.default.editProfile);
+        this.authRouter.post("/verify-otp", AuthController_1.default.verifyOtp);
+        this.authRouter.post("/forgot-email", AuthController_1.default.forgotPasswordByEmail);
+        this.authRouter.post("/send-otp-register", AuthController_1.default.sendOtpRegister);
+        this.authRouter.put("/reset-password", AuthController_1.default.ResetPassword);
+        this.authRouter.post("/forgot-phoneNumber", AuthController_1.default.PickForgotPasswordByPhoneNumber);
     }
 }
 exports.default = new AuthRouter().authRouter;
