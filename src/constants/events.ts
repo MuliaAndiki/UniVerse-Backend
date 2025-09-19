@@ -1,0 +1,17 @@
+export enum TipeEvents {
+  FESTIVAL = "Festival",
+  KONSER = "Konser",
+  WORKSHOP = "Workshop",
+  SEMINAR = "Seminar",
+  JEJEPANGAN = "Acara Jejepangan",
+  PAMERAN = "Pameran",
+  KOMPETISI = "Kompetisi",
+  KOMUNITAS = "Komunitas",
+  KULINER = "Acara Kuliner",
+  SOSIAL = "Acara Sosial / Amal",
+  OLAHRAGA = "Olahraga",
+  KEAGAMAAN = "Keagamaan",
+  TEKNOLOGI = "Teknologi",
+  NONTON_BARANG = "Nonton Bareng / Screening",
+  LAINNYA = "Lainnya",
+}

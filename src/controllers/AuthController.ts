@@ -1,95 +1,105 @@
-import { Request, Response } from "express";
 import Auth from "../models/Auth";
+import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import {
-  TAuth,
-  PickLogin,
+  IAuth,
   PickRegister,
+  PickLogin,
   JwtPayload,
   PickLogout,
+  PickGetProfile,
+  PickEditProfile,
+  PickVerifyOtp,
+  PickForgotPasswordByEmail,
+  PickResetPassword,
+  PickSendOtpRegister,
+  PickForgotPasswordByNomorHp,
 } from "../types/auth.types";
 import { verifyToken } from "../middleware/auth";
-import bcryptjs from "bcryptjs";
-import jwt from "jsonwebtoken";
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
-    }
-  }
-}
+import { env } from "../utils/env.config";
+import { generateOtp } from "../utils/generateOtp";
+import { sendOTPEmail } from "../utils/mailer";
+import { uploadCloudinary } from "../utils/uploadClodinary";
+import { uploadImages } from "../middleware/multer";
 
 class AuthController {
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
       const auth: PickRegister = req.body;
 
-      if (!auth.email || !auth.fullName || !auth.phone || !auth.password) {
+      if (!auth.email || !auth.fullname || !auth.password) {
         res.status(400).json({
           status: 400,
-          message: "All field is required",
+          message: "Mohon Isi Semua Kolum",
         });
         return;
       }
 
-      const isAlreadyRegistered: TAuth | null = await Auth.findOne({
+      const isEmailAlready: IAuth | null = await Auth.findOne({
         email: auth.email,
       });
 
-      if (isAlreadyRegistered) {
+      if (isEmailAlready) {
         res.status(400).json({
           status: 400,
-          message: "This email is already registered, try another email",
+          message: "Email Sudah Ada",
         });
         return;
       }
 
-      bcryptjs.hash(auth.password, 10, async (err, hash): Promise<void> => {
+      const otp = generateOtp(6);
+      const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+      bcrypt.hash(auth.password, 10, async (err, hash): Promise<void> => {
         if (err) {
-          res.status(500).json(err);
+          res.status(500).json({
+            status: 500,
+            message: "Password Anda",
+          });
           return;
         }
         const newAuth = new Auth({
           email: auth.email,
-          fullName: auth.fullName,
-          phone: auth.phone,
           password: hash,
+          fullname: auth.fullname,
+          role: auth.role,
+          otp: otp,
+          isVerified: false,
         });
-
+        newAuth.otpExpires = otpExpires;
         await newAuth.save();
+
+        await sendOTPEmail(auth.email, otp);
 
         res.status(201).json({
           status: 200,
+          message: "Berhasil Melakukan Register",
           data: newAuth,
-          message: "account successfully registered",
         });
-
-        return;
       });
     } catch (error) {
       res.status(500).json({
         status: 500,
-        message: "Internal server error",
+        message: "Servel Internal Error",
+        error: error instanceof Error ? error.message : error,
       });
-      return;
     }
   };
 
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
       const auth: PickLogin = req.body;
-
       if (!auth.email || !auth.password) {
         res.status(400).json({
           status: 400,
-          message: "All field is required",
+          message: "Mohon Isi Semua Kolum",
         });
-        return;
       }
 
-      const isAuthExist: TAuth | null = await Auth.findOne({
+      const isAuthExist: IAuth | null = await Auth.findOne({
         email: auth.email,
       });
+
       if (!isAuthExist) {
         res.status(404).json({
           status: 404,
@@ -98,26 +108,23 @@ class AuthController {
         return;
       }
 
-      const validateAuth = await bcryptjs.compare(
-        auth.password,
-        isAuthExist.password
-      );
-
-      if (!validateAuth) {
-        res
-          .status(400)
-          .json({ status: 400, message: "Wrong email or password" });
+      const isMatch = await bcrypt.compare(auth.password, isAuthExist.password);
+      if (!isMatch) {
+        res.status(401).json({
+          status: 401,
+          message: "Invalid credentials",
+        });
         return;
       }
 
       const payload: JwtPayload = {
         _id: isAuthExist._id,
         email: isAuthExist.email,
-        fullName: isAuthExist.fullName,
-        phone: isAuthExist.phone,
+        fullname: isAuthExist.fullname,
+        role: isAuthExist.role,
       };
 
-      if (!process.env.JWT_SECRET) {
+      if (!env.JWT_SECRET) {
         console.error("JWT_SECRET is not defined in environment variables");
         res.status(500).json({
           status: 500,
@@ -125,9 +132,10 @@ class AuthController {
         });
         return;
       }
+
       jwt.sign(
         payload,
-        process.env.JWT_SECRET,
+        env.JWT_SECRET,
         { expiresIn: "1d" },
         async (err, token): Promise<void> => {
           if (err) {
@@ -139,33 +147,34 @@ class AuthController {
           await isAuthExist.save();
           res.status(200).json({
             status: 200,
-            data: isAuthExist,
+            data: {
+              isAuthExist,
+              token,
+            },
             message: "Login successfully",
           });
-
           return;
         }
       );
     } catch (error) {
       res.status(500).json({
         status: 500,
-        message: "Internal server error",
+        message: "Server Internal Error",
+        error: error instanceof Error ? error.message : error,
       });
       return;
     }
   };
-
   public logout = [
     verifyToken,
     async (req: Request, res: Response): Promise<void> => {
       try {
         const { _id }: PickLogout = req.user as JwtPayload;
 
-        const auth: TAuth | null = await Auth.findById(_id);
-
+        const auth: IAuth | null = await Auth.findById(_id);
         if (!auth) {
-          res.status(404).json({
-            status: 404,
+          res.status(400).json({
+            status: 400,
             message: "Account not found",
           });
           return;
@@ -173,22 +182,351 @@ class AuthController {
 
         auth.set("token", null);
         await auth.save();
-
         res.status(200).json({
-          status: 2000,
-          message: "Account logut successfully",
+          status: 200,
+          message: "Account logout successfully",
         });
 
         return;
       } catch (error) {
         res.status(500).json({
           status: 500,
-          message: "Internal server error",
+          message: "Server Internal Error",
+          error: error instanceof Error ? error.message : error,
         });
         return;
       }
     },
   ];
+  public getProfileByUser = [
+    verifyToken,
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { _id }: PickGetProfile = req.user as JwtPayload;
+
+        const auth: IAuth | null = await Auth.findById(_id);
+
+        if (!auth) {
+          res.status(400).json({
+            status: 400,
+            message: "Account not found",
+          });
+          return;
+        }
+
+        res.status(200).json({
+          status: 200,
+          message: "User Profile Found",
+          data: auth,
+        });
+        return;
+      } catch (error) {
+        res.status(500).json({
+          status: 500,
+          message: "Server Internal Error",
+          error: error instanceof Error ? error.message : error,
+        });
+        return;
+      }
+    },
+  ];
+  public editProfile = [
+    verifyToken,
+    uploadImages,
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const auth: PickEditProfile = req.body;
+        const user = (req as any).user._id;
+
+        if (!auth) {
+          res.status(400).json({
+            status: 400,
+            message: "Account Not Found",
+          });
+          return;
+        }
+
+        const files = req.files as Record<string, Express.Multer.File[]>;
+        const foto = files.fotoProfile?.[0];
+        let fotoUrl: String | undefined;
+
+        if (foto) {
+          const result = await uploadCloudinary(
+            foto.buffer,
+            "fotoProfile",
+            foto.originalname
+          );
+          fotoUrl = result.secure_url;
+        }
+
+        const updateData = {
+          ...auth,
+          ...(fotoUrl && { fotoProfile: fotoUrl }),
+        };
+        await Auth.findByIdAndUpdate(user, {
+          $set: updateData,
+        });
+
+        res.status(200).json({
+          status: 200,
+          message: "Profile  Update Successfully",
+        });
+      } catch (error) {
+        res.status(500).json({
+          status: 500,
+          message: "Server Internal Error",
+          error: error instanceof Error ? error.message : error,
+        });
+        return;
+      }
+    },
+  ];
+
+  public verifyOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const auth: PickVerifyOtp = req.body;
+
+      if (!auth.email && !auth.phoneNumber) {
+        res.status(400).json({
+          status: 400,
+          message: "Email of Phone Number is Required",
+        });
+        return;
+      }
+
+      const user = await Auth.findOne(
+        auth.email ? { email: auth.email } : { phoneNumber: auth.phoneNumber }
+      );
+
+      if (!user) {
+        res.status(400).json({
+          status: 400,
+          message: "Email Tidak Ditemukan",
+        });
+        return;
+      }
+
+      if (user.otp !== auth.otp) {
+        res.status(400).json({
+          status: 400,
+          message: "OTP Failed",
+        });
+        return;
+      }
+
+      user.isVerified = true;
+      user.otp = undefined;
+      await user.save();
+
+      res.status(200).json({
+        status: 200,
+        message: "OTP Successfully IsVerif",
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 500,
+        message: "Server Internal Error",
+        error: error instanceof Error ? error.message : error,
+      });
+      return;
+    }
+  };
+  public forgotPasswordByEmail = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const auth: PickForgotPasswordByEmail = req.body;
+
+      const user = await Auth.findOne({ email: auth.email });
+      if (!user) {
+        res.status(400).json({
+          status: 400,
+          message: "Account Not Found",
+          data: null,
+        });
+        return;
+      }
+
+      const otp = generateOtp(6);
+      const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+      user.otp = otp;
+      user.otpExpires = otpExpires;
+
+      await user.save();
+      await sendOTPEmail(auth.email, otp);
+      res.status(200).json({
+        status: 200,
+        message: "Successfully Send Otp ForPassword",
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 500,
+        message: "Server Internal Error",
+        error: error instanceof Error ? error.message : error,
+      });
+      return;
+    }
+  };
+
+  public PickForgotPasswordByPhoneNumber = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const auth: PickForgotPasswordByNomorHp = req.body;
+
+      const user = await Auth.findOne({ phoneNumber: auth.phoneNumber });
+      if (!user) {
+        res.status(400).json({
+          status: 400,
+          message: "Number Phone Not Found",
+        });
+        return;
+      }
+
+      if (!user.email) {
+        res.status(400).json({
+          statu: 400,
+          message: "No email linked with this phone number",
+        });
+        return;
+      }
+      const otp = generateOtp(6);
+      const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+      user.otp = otp;
+      user.otpExpires = otpExpires;
+
+      await user.save();
+      await sendOTPEmail(user.email, otp);
+
+      res.status(200).json({
+        status: 200,
+        message: "Successfully Send Otp ForPassword",
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 500,
+        message: "Server Internal Error",
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+  };
+  public ResetPassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const auth: PickResetPassword = req.body;
+
+      if (!auth.email && !auth.phoneNumber) {
+        res.status(400).json({
+          status: 400,
+          message: "Email of Phone Number is Required",
+        });
+        return;
+      }
+
+      const user = await Auth.findOne(
+        auth.email ? { email: auth.email } : { phoneNumber: auth.phoneNumber }
+      );
+
+      if (!user) {
+        res.status(400).json({
+          status: 400,
+          message: "Account Not Found",
+        });
+        return;
+      }
+
+      if (!user.isVerified) {
+        res.status(403).json({
+          status: 403,
+          message: "Email Not Yet Verified",
+        });
+        return;
+      }
+
+      const hashPassowrd = await bcrypt.hash(auth.password, 10);
+      user.password = hashPassowrd;
+      (user.otp = undefined), (user.otpExpires = undefined);
+
+      await user.save();
+
+      res.status(200).json({
+        status: 200,
+        message: "Successfully Reset Your Passowrd",
+        data: user,
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 500,
+        message: "Server Internal Error",
+        error: error instanceof Error ? error.message : error,
+      });
+      return;
+    }
+  };
+  public sendOtpRegister = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const auth: PickSendOtpRegister = req.body;
+
+      if (!auth || !auth.email) {
+        res.status(400).json({
+          status: 400,
+          message: "Email Requared",
+        });
+        return;
+      }
+
+      const user = await Auth.findOne({ email: auth.email });
+      if (!user) {
+        res.status(400).json({
+          status: 400,
+          messange: "Email Not Found",
+        });
+        return;
+      }
+
+      const otp = generateOtp(6);
+      const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
+
+      user.otp = otp;
+      user.otpExpires = otpExpires;
+
+      await user.save();
+      await sendOTPEmail(auth.email, otp);
+
+      res.status(200).json({
+        status: 200,
+        message: "Otp Send Successfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 500,
+        message: "Server Internal Error",
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+  };
+  public deleteAkun = async (): Promise<void> => {
+    try {
+      const thresholdDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+
+      const result = await Auth.deleteMany({
+        isVerified: false,
+        createdAt: { $lt: thresholdDate },
+      });
+
+      console.log(
+        `[CRON] ${result.deletedCount} akun tidak verifikasi dihapus`
+      );
+    } catch (error) {
+      console.error("[CRON] Gagal hapus akun:", error);
+    }
+  };
 }
 
 export default new AuthController();

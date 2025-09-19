@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TipeEvents = void 0;
+var TipeEvents;
+(function (TipeEvents) {
+    TipeEvents["FESTIVAL"] = "Festival";
+    TipeEvents["KONSER"] = "Konser";
+    TipeEvents["WORKSHOP"] = "Workshop";
+    TipeEvents["SEMINAR"] = "Seminar";
+    TipeEvents["JEJEPANGAN"] = "Acara Jejepangan";
+    TipeEvents["PAMERAN"] = "Pameran";
+    TipeEvents["KOMPETISI"] = "Kompetisi";
+    TipeEvents["KOMUNITAS"] = "Komunitas";
+    TipeEvents["KULINER"] = "Acara Kuliner";
+    TipeEvents["SOSIAL"] = "Acara Sosial / Amal";
+    TipeEvents["OLAHRAGA"] = "Olahraga";
+    TipeEvents["KEAGAMAAN"] = "Keagamaan";
+    TipeEvents["TEKNOLOGI"] = "Teknologi";
+    TipeEvents["NONTON_BARANG"] = "Nonton Bareng / Screening";
+    TipeEvents["LAINNYA"] = "Lainnya";
+})(TipeEvents || (exports.TipeEvents = TipeEvents = {}));

@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PaymentMethod = void 0;
+var PaymentMethod;
+(function (PaymentMethod) {
+    PaymentMethod["DEFAULT"] = "-";
+    PaymentMethod["GOPAY"] = "gopay";
+    PaymentMethod["SHOPEEPAY"] = "shopeepay";
+    PaymentMethod["QRIS"] = "qris";
+    PaymentMethod["BCA_VA"] = "bca_va";
+    PaymentMethod["BNI_VA"] = "bni_va";
+    PaymentMethod["BRI_VA"] = "bri_va";
+    PaymentMethod["PERMATA_VA"] = "permata_va";
+    PaymentMethod["MANDIRI_VA"] = "echannel";
+    PaymentMethod["INDOMARET"] = "indomaret";
+    PaymentMethod["ALFAMART"] = "alfamart";
+    PaymentMethod["CREDIT_CARD"] = "credit_card";
+    PaymentMethod["AKULAKU"] = "akulaku";
+    PaymentMethod["KREDIVO"] = "kredivo";
+    PaymentMethod["DANAMON_ONLINE"] = "danamon_online";
+    PaymentMethod["CIMB_CLICKS"] = "cimb_clicks";
+    PaymentMethod["BCA_KLIKBCA"] = "bca_klikbca";
+})(PaymentMethod || (exports.PaymentMethod = PaymentMethod = {}));
