@@ -10,7 +10,7 @@ declare global {
     interface Request {
       user?: {
         _id: Types.ObjectId;
-        fullname: string;
+        fullName: string;
         email: string;
         role: string;
       };
@@ -56,7 +56,7 @@ export const verifyToken = async (
 
     req.user = {
       _id: user._id,
-      fullname: user.fullname,
+      fullName: user.fullName!,
       email: user.email,
       role: user.role,
     };

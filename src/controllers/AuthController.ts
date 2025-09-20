@@ -15,6 +15,8 @@ import {
   PickResetPassword,
   PickSendOtpRegister,
   PickForgotPasswordByNomorHp,
+  PickLoginGoogle,
+  PickDeleteAuth,
 } from "../types/auth.types";
 import { verifyToken } from "../middleware/auth";
 import { env } from "../utils/env.config";
@@ -22,13 +24,20 @@ import { generateOtp } from "../utils/generateOtp";
 import { sendOTPEmail } from "../utils/mailer";
 import { uploadCloudinary } from "../utils/uploadClodinary";
 import { uploadImages } from "../middleware/multer";
+import { OAuth2Client } from "google-auth-library";
+import { Document } from "mongoose";
+
+const CLIENT_ID = env.GOOGLE_CLIENT_ID!;
+const JWT_SECRET = env.JWT_SECRET!;
+
+const CLIENT = new OAuth2Client(CLIENT_ID);
 
 class AuthController {
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
       const auth: PickRegister = req.body;
 
-      if (!auth.email || !auth.fullname || !auth.password) {
+      if (!auth.email || !auth.fullName || !auth.password) {
         res.status(400).json({
           status: 400,
           message: "Mohon Isi Semua Kolum",
@@ -61,7 +70,7 @@ class AuthController {
         const newAuth = new Auth({
           email: auth.email,
           password: hash,
-          fullname: auth.fullname,
+          fullName: auth.fullName,
           role: auth.role,
           otp: otp,
           isVerified: false,
@@ -120,7 +129,7 @@ class AuthController {
       const payload: JwtPayload = {
         _id: isAuthExist._id,
         email: isAuthExist.email,
-        fullname: isAuthExist.fullname,
+        fullName: isAuthExist.fullName,
         role: isAuthExist.role,
       };
 
@@ -236,19 +245,20 @@ class AuthController {
     async (req: Request, res: Response): Promise<void> => {
       try {
         const auth: PickEditProfile = req.body;
-        const user = (req as any).user._id;
+        const user = (req as any).user;
 
-        if (!auth) {
-          res.status(400).json({
-            status: 400,
-            message: "Account Not Found",
+        if (!user?._id) {
+          res.status(401).json({
+            status: 401,
+            message: "Unauthorized",
           });
-          return;
         }
 
-        const files = req.files as Record<string, Express.Multer.File[]>;
-        const foto = files.fotoProfile?.[0];
-        let fotoUrl: String | undefined;
+        const files = req.files as
+          | Record<string, Express.Multer.File[]>
+          | undefined;
+        const foto = files?.fotoProfile?.[0];
+        let fotoUrl: string | undefined;
 
         if (foto) {
           const result = await uploadCloudinary(
@@ -259,17 +269,29 @@ class AuthController {
           fotoUrl = result.secure_url;
         }
 
-        const updateData = {
-          ...auth,
-          ...(fotoUrl && { fotoProfile: fotoUrl }),
-        };
-        await Auth.findByIdAndUpdate(user, {
-          $set: updateData,
-        });
+        const updateData: Partial<PickEditProfile & { fotoProfile?: string }> =
+          {
+            ...(auth.gender !== undefined && { gender: auth.gender }),
+            ...(auth.fullName && { fullName: auth.fullName }),
+            ...(auth.email && { email: auth.email }),
+            ...(auth.phoneNumber && { phoneNumber: auth.phoneNumber }),
+            ...(fotoUrl && { fotoProfile: fotoUrl }),
+            ...(auth.otp && { otp: auth.otp }),
+          };
+
+        if (Object.keys(updateData).length === 0) {
+          res.status(400).json({
+            status: 400,
+            message: "Nothing to update",
+          });
+        }
+
+        await Auth.findByIdAndUpdate(user._id, { $set: updateData });
 
         res.status(200).json({
           status: 200,
-          message: "Profile  Update Successfully",
+          message: "Profile updated successfully",
+          data: updateData,
         });
       } catch (error) {
         res.status(500).json({
@@ -277,7 +299,6 @@ class AuthController {
           message: "Server Internal Error",
           error: error instanceof Error ? error.message : error,
         });
-        return;
       }
     },
   ];
@@ -370,7 +391,7 @@ class AuthController {
     }
   };
 
-  public PickForgotPasswordByPhoneNumber = async (
+  public ForgotPasswordByPhoneNumber = async (
     req: Request,
     res: Response
   ): Promise<void> => {
@@ -527,6 +548,100 @@ class AuthController {
       console.error("[CRON] Gagal hapus akun:", error);
     }
   };
+
+  public deleteAuth = [
+    verifyToken,
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { _id }: PickDeleteAuth = req.user as JwtPayload;
+        const auth: IAuth | null = await Auth.findById(_id);
+        if (!auth) {
+          res.status(404).json({
+            status: 404,
+            message: "Account Not Found",
+          });
+          return;
+        }
+
+        await auth.deleteOne();
+        res.status(200).json({
+          status: 200,
+          message: "Account Delete successfully",
+        });
+      } catch (error) {
+        res.status(500).json({
+          status: 500,
+          message: "Server Internal Error",
+          error: error instanceof Error ? error.message : error,
+        });
+      }
+    },
+  ];
+  public loginGoogle = [
+    verifyToken,
+    async (req: Request, res: Response): Promise<any> => {
+      try {
+        const { tokenId } = req.body;
+        if (!tokenId) {
+          res.status(404).json({
+            status: 404,
+            message: "Token Id Invalid",
+          });
+          return;
+        }
+        const ticket = await CLIENT.verifyIdToken({
+          idToken: tokenId,
+          audience: CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload?.email || !payload) {
+          res.status(400).json({
+            status: 400,
+            message: "tokenId isRequored",
+          });
+          return;
+        }
+        let user: (IAuth & Document) | null = await Auth.findOne({
+          email: payload.email,
+        });
+        if (!user) {
+          user = (await Auth.create({
+            email: payload.email,
+            fullname: payload.name,
+            fotoProfile: payload.picture,
+            role: "user",
+            password: "-",
+            gender: true,
+            methotPayment: "-",
+            phoneNumber: "-",
+            otp: "-",
+            isVerified: true,
+          })) as IAuth;
+        }
+        const JwtPayload: PickLoginGoogle = {
+          email: user?.email || "",
+          fullName: user?.fullName || "",
+          fotoProfile: user?.fotoProfile || "",
+          role: user?.role || "",
+        };
+        const token = jwt.sign(JwtPayload, JWT_SECRET, { expiresIn: "7d" });
+
+        res.status(200).json({
+          status: 200,
+          message: "Login berhasil",
+          token,
+          user: JwtPayload,
+        });
+      } catch (error) {
+        res.status(500).json({
+          status: 500,
+          message: "Server Internal Error",
+          error: error instanceof Error ? error.message : error,
+        });
+      }
+    },
+  ];
 }
 
 export default new AuthController();

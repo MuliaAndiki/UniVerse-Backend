@@ -18,15 +18,13 @@ const AuthSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fullname: {
+    fullName: {
       type: String,
-      required: true,
     },
     role: {
       type: String,
       enum: RoleConstanst,
       default: "user",
-      required: true,
     },
     fotoProfile: {
       type: String,
@@ -42,11 +40,6 @@ const AuthSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    provinsi: {
-      type: String,
-      default: null,
-      enum: PROVINCES,
-    },
     gender: {
       type: Boolean,
       default: null,
@@ -60,14 +53,6 @@ const AuthSchema = new mongoose.Schema(
     },
     otpExpires: {
       type: Date,
-    },
-    lat: {
-      type: Number,
-      default: null,
-    },
-    lng: {
-      type: Number,
-      default: null,
     },
   },
   { timestamps: true }
