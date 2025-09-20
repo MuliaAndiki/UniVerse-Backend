@@ -18,7 +18,7 @@ const AuthSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    fullname: {
+    fullName: {
       type: String,
     },
     role: {
@@ -39,11 +39,6 @@ const AuthSchema = new mongoose.Schema(
     phoneNumber: {
       type: String,
       default: null,
-    },
-    provinsi: {
-      type: String,
-      default: null,
-      enum: PROVINCES,
     },
     gender: {
       type: Boolean,

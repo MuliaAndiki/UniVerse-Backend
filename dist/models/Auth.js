@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const role_1 = require("../constants/role");
 const bank_1 = require("../constants/bank");
-const prov_1 = require("../constants/prov");
 const AuthSchema = new mongoose_1.default.Schema({
     email: {
         type: String,
@@ -21,7 +20,7 @@ const AuthSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
-    fullname: {
+    fullName: {
         type: String,
     },
     role: {
@@ -42,11 +41,6 @@ const AuthSchema = new mongoose_1.default.Schema({
     phoneNumber: {
         type: String,
         default: null,
-    },
-    provinsi: {
-        type: String,
-        default: null,
-        enum: prov_1.PROVINCES,
     },
     gender: {
         type: Boolean,

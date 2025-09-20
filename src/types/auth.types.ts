@@ -4,7 +4,7 @@ export interface IAuth extends Document {
   _id: Types.ObjectId;
   email: string;
   password: string;
-  fullname: string;
+  fullName: string;
   role: string;
   gender: boolean;
   methotPayment: string;
@@ -17,17 +17,17 @@ export interface IAuth extends Document {
   __v: any;
 }
 
-export type JwtPayload = Pick<IAuth, "_id" | "email" | "fullname" | "role">;
+export type JwtPayload = Pick<IAuth, "_id" | "email" | "fullName" | "role">;
 export type PickRegister = Pick<
   IAuth,
-  "email" | "fullname" | "password" | "role"
+  "email" | "fullName" | "password" | "role"
 >;
 export type PickLogin = Pick<IAuth, "email" | "password">;
 export type PickLogout = Pick<IAuth, "_id">;
 export type PickGetProfile = Pick<IAuth, "_id">;
 export type PickEditProfile = Pick<
   IAuth,
-  "fullname" | "email" | "phoneNumber" | "gender"
+  "fullName" | "email" | "phoneNumber" | "gender" | "otp"
 >;
 export type PickVerifyOtp = Pick<IAuth, "email" | "otp" | "phoneNumber">;
 export type PickForgotPasswordByEmail = Pick<IAuth, "email">;
@@ -40,5 +40,7 @@ export type PickForgotPasswordByNomorHp = Pick<IAuth, "phoneNumber">;
 
 export type PickLoginGoogle = Pick<
   IAuth,
-  "email" | "fotoProfile" | "role" | "fullname"
+  "email" | "fotoProfile" | "role" | "fullName"
 >;
+
+export type PickDeleteAuth = Pick<IAuth, "_id">;

@@ -21,7 +21,7 @@ class AuthController {
         this.register = async (req, res) => {
             try {
                 const auth = req.body;
-                if (!auth.email || !auth.fullname || !auth.password) {
+                if (!auth.email || !auth.fullName || !auth.password) {
                     res.status(400).json({
                         status: 400,
                         message: "Mohon Isi Semua Kolum",
@@ -51,7 +51,7 @@ class AuthController {
                     const newAuth = new Auth_1.default({
                         email: auth.email,
                         password: hash,
-                        fullname: auth.fullname,
+                        fullName: auth.fullName,
                         role: auth.role,
                         otp: otp,
                         isVerified: false,
@@ -104,7 +104,7 @@ class AuthController {
                 const payload = {
                     _id: isAuthExist._id,
                     email: isAuthExist.email,
-                    fullname: isAuthExist.fullname,
+                    fullName: isAuthExist.fullName,
                     role: isAuthExist.role,
                 };
                 if (!env_config_1.env.JWT_SECRET) {
@@ -209,31 +209,39 @@ class AuthController {
             async (req, res) => {
                 try {
                     const auth = req.body;
-                    const user = req.user._id;
-                    if (!auth) {
-                        res.status(400).json({
-                            status: 400,
-                            message: "Account Not Found",
+                    const user = req.user;
+                    if (!user?._id) {
+                        res.status(401).json({
+                            status: 401,
+                            message: "Unauthorized",
                         });
-                        return;
                     }
                     const files = req.files;
-                    const foto = files.fotoProfile?.[0];
+                    const foto = files?.fotoProfile?.[0];
                     let fotoUrl;
                     if (foto) {
                         const result = await (0, uploadClodinary_1.uploadCloudinary)(foto.buffer, "fotoProfile", foto.originalname);
                         fotoUrl = result.secure_url;
                     }
                     const updateData = {
-                        ...auth,
+                        ...(auth.gender !== undefined && { gender: auth.gender }),
+                        ...(auth.fullName && { fullName: auth.fullName }),
+                        ...(auth.email && { email: auth.email }),
+                        ...(auth.phoneNumber && { phoneNumber: auth.phoneNumber }),
                         ...(fotoUrl && { fotoProfile: fotoUrl }),
+                        ...(auth.otp && { otp: auth.otp }),
                     };
-                    await Auth_1.default.findByIdAndUpdate(user, {
-                        $set: updateData,
-                    });
+                    if (Object.keys(updateData).length === 0) {
+                        res.status(400).json({
+                            status: 400,
+                            message: "Nothing to update",
+                        });
+                    }
+                    await Auth_1.default.findByIdAndUpdate(user._id, { $set: updateData });
                     res.status(200).json({
                         status: 200,
-                        message: "Profile  Update Successfully",
+                        message: "Profile updated successfully",
+                        data: updateData,
                     });
                 }
                 catch (error) {
@@ -242,7 +250,6 @@ class AuthController {
                         message: "Server Internal Error",
                         error: error instanceof Error ? error.message : error,
                     });
-                    return;
                 }
             },
         ];
@@ -320,7 +327,7 @@ class AuthController {
                 return;
             }
         };
-        this.PickForgotPasswordByPhoneNumber = async (req, res) => {
+        this.ForgotPasswordByPhoneNumber = async (req, res) => {
             try {
                 const auth = req.body;
                 const user = await Auth_1.default.findOne({ phoneNumber: auth.phoneNumber });
@@ -451,6 +458,34 @@ class AuthController {
                 console.error("[CRON] Gagal hapus akun:", error);
             }
         };
+        this.deleteAuth = [
+            auth_1.verifyToken,
+            async (req, res) => {
+                try {
+                    const { _id } = req.user;
+                    const auth = await Auth_1.default.findById(_id);
+                    if (!auth) {
+                        res.status(404).json({
+                            status: 404,
+                            message: "Account Not Found",
+                        });
+                        return;
+                    }
+                    await auth.deleteOne();
+                    res.status(200).json({
+                        status: 200,
+                        message: "Account Delete successfully",
+                    });
+                }
+                catch (error) {
+                    res.status(500).json({
+                        status: 500,
+                        message: "Server Internal Error",
+                        error: error instanceof Error ? error.message : error,
+                    });
+                }
+            },
+        ];
         this.loginGoogle = [
             auth_1.verifyToken,
             async (req, res) => {
@@ -494,7 +529,7 @@ class AuthController {
                     }
                     const JwtPayload = {
                         email: user?.email || "",
-                        fullname: user?.fullname || "",
+                        fullName: user?.fullName || "",
                         fotoProfile: user?.fotoProfile || "",
                         role: user?.role || "",
                     };

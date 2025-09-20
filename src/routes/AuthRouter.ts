@@ -16,13 +16,14 @@ class AuthRouter {
     this.authRouter.put("/profile", AuthController.editProfile);
     this.authRouter.post("/verify-otp", AuthController.verifyOtp);
     this.authRouter.post("/forgot-email", AuthController.forgotPasswordByEmail);
-    this.authRouter.post("/send-otp-register", AuthController.sendOtpRegister);
+    this.authRouter.post("/send-otp", AuthController.sendOtpRegister);
     this.authRouter.put("/reset-password", AuthController.ResetPassword);
     this.authRouter.post(
       "/forgot-phoneNumber",
-      AuthController.PickForgotPasswordByPhoneNumber
+      AuthController.ForgotPasswordByPhoneNumber
     );
     this.authRouter.post("/google", AuthController.loginGoogle);
+    this.authRouter.delete("/account", AuthController.deleteAuth);
   }
 }
 
