@@ -8,10 +8,15 @@ const CampusController_1 = __importDefault(require("../controllers/CampusControl
 class CampusRouter {
     constructor() {
         this.campusRouter = express_1.default.Router();
-        this.router();
+        this.routes();
     }
-    router() {
-        this.campusRouter.get("/", CampusController_1.default.sayHello);
+    routes() {
+        this.campusRouter.post("/", CampusController_1.default.create);
+        this.campusRouter.get("/", CampusController_1.default.list);
+        this.campusRouter.get("/:id", CampusController_1.default.detail);
+        this.campusRouter.put("/:id", CampusController_1.default.update);
+        this.campusRouter.delete("/:id", CampusController_1.default.remove);
+        this.campusRouter.get("/:id/reports", CampusController_1.default.reports);
     }
 }
 exports.default = new CampusRouter().campusRouter;

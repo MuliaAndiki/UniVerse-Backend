@@ -1,5 +1,12 @@
-import { Document, Types } from "mongoose";
+import mongoose, { Document, Types } from "mongoose";
+import { IOrganizerProfile } from "../partial";
 
 export interface IOrganizer extends Document {
-  _id: any;
+  userRef: mongoose.Types.ObjectId;
+  campusRef: mongoose.Types.ObjectId;
+  profile?: IOrganizerProfile;
+  approvedByCampus: boolean;
+  status: "pending" | "active" | "suspended";
+  createdAt: Date;
+  updatedAt: Date;
 }

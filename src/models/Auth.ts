@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { RoleConstanst } from "../constants/role";
 import { PaymentMethod } from "../constants/bank";
-import { PROVINCES } from "../constants/prov";
 
 const AuthSchema = new mongoose.Schema(
   {

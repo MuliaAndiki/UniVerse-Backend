@@ -20,6 +20,10 @@ const envSchema = zod_1.z.object({
     SMTP_SECURE: zod_1.z.preprocess((val) => val === "true", zod_1.z.boolean()),
     GOOGLE_CLIENT_ID: zod_1.z.string(),
     GOOGLE_CLIENT_SECRET: zod_1.z.string(),
+    GOOGLE_CALENDAR_REDIRECT_URI: zod_1.z.string().optional(),
+    GOOGLE_CALENDAR_REFRESH_TOKEN: zod_1.z.string().optional(),
+    MIDTRANS_SERVER_KEY: zod_1.z.string().optional(),
+    MIDTRANS_CLIENT_KEY: zod_1.z.string().optional(),
 });
 const _env = envSchema.safeParse(process.env);
 if (!_env.success) {
