@@ -33,16 +33,12 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Campus = void 0;
+exports.PaymentLog = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const campusSchema = new mongoose_1.Schema({
-    name: { type: String, required: true, unique: true },
-    address: { type: String },
-    admins: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
-    contact: {
-        email: { type: String },
-        phone: { type: String },
-    },
+const paymentLogSchema = new mongoose_1.Schema({
+    orderId: { type: String, required: true, unique: true },
+    midtransStatus: { type: String },
+    rawPayload: { type: mongoose_1.Schema.Types.Mixed },
 }, { timestamps: true });
-exports.Campus = mongoose_1.default.models.Campus || mongoose_1.default.model("Campus", campusSchema);
-exports.default = exports.Campus;
+exports.PaymentLog = mongoose_1.default.models.PaymentLog || mongoose_1.default.model("PaymentLog", paymentLogSchema);
+exports.default = exports.PaymentLog;

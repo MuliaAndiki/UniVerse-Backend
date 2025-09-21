@@ -33,16 +33,17 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Campus = void 0;
+exports.User = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const campusSchema = new mongoose_1.Schema({
-    name: { type: String, required: true, unique: true },
-    address: { type: String },
-    admins: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
-    contact: {
-        email: { type: String },
+const userSchema = new mongoose_1.Schema({
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    role: { type: String, enum: ["user", "organizer", "campus", "super-admin"], default: "user" },
+    campusRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "Campus", default: null },
+    profile: {
+        fullName: { type: String },
         phone: { type: String },
     },
 }, { timestamps: true });
-exports.Campus = mongoose_1.default.models.Campus || mongoose_1.default.model("Campus", campusSchema);
-exports.default = exports.Campus;
+exports.User = mongoose_1.default.models.User || mongoose_1.default.model("User", userSchema);
+exports.default = exports.User;

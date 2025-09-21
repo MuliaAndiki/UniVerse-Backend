@@ -10,6 +10,19 @@ const AuthRouter_1 = __importDefault(require("./routes/AuthRouter"));
 const node_cron_1 = __importDefault(require("node-cron"));
 const AuthController_1 = __importDefault(require("./controllers/AuthController"));
 const CampusRouter_1 = __importDefault(require("./routes/CampusRouter"));
+const UsersRouter_1 = __importDefault(require("./routes/UsersRouter"));
+const OrganizerRouter_1 = __importDefault(require("./routes/OrganizerRouter"));
+const EventRouter_1 = __importDefault(require("./routes/EventRouter"));
+const TicketRouter_1 = __importDefault(require("./routes/TicketRouter"));
+const PaymentRouter_1 = __importDefault(require("./routes/PaymentRouter"));
+const ReportRouter_1 = __importDefault(require("./routes/ReportRouter"));
+const UploadRouter_1 = __importDefault(require("./routes/UploadRouter"));
+const helmet_1 = __importDefault(require("helmet"));
+const express_mongo_sanitize_1 = __importDefault(require("express-mongo-sanitize"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+// xss-clean doesn't have types; require import
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const xss = require("xss-clean");
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -19,13 +32,27 @@ class App {
     }
     middlewares() {
         this.app.use((0, cors_1.default)({ origin: "*", optionsSuccessStatus: 200 }));
+        this.app.use((0, helmet_1.default)());
+        this.app.use((0, express_mongo_sanitize_1.default)());
+        this.app.use(xss());
         this.app.use(express_1.default.urlencoded({ extended: false }));
         this.app.use(body_parser_1.default.json());
         this.app.use(express_1.default.json());
-        this.app.use(express_1.default.json());
         this.app.use(express_1.default.urlencoded({ extended: true }));
-        this.app.use("/api/auth", AuthRouter_1.default);
+        // Rate limiting for auth & payments
+        const authLimiter = (0, express_rate_limit_1.default)({ windowMs: 15 * 60 * 1000, max: 100 });
+        const paymentLimiter = (0, express_rate_limit_1.default)({ windowMs: 15 * 60 * 1000, max: 200 });
+        this.app.use("/api/auth", authLimiter, AuthRouter_1.default);
+        this.app.use("/api/payments", paymentLimiter);
+        // Routers
         this.app.use("/api/campus", CampusRouter_1.default);
+        this.app.use("/api", UsersRouter_1.default);
+        this.app.use("/api", OrganizerRouter_1.default);
+        this.app.use("/api", EventRouter_1.default);
+        this.app.use("/api", TicketRouter_1.default);
+        this.app.use("/api", PaymentRouter_1.default);
+        this.app.use("/api", ReportRouter_1.default);
+        this.app.use("/api", UploadRouter_1.default);
     }
     routes() {
         this.app.get("/", (req, res) => {
