@@ -1,18 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
-
-export interface ICampusContact {
-  email?: string;
-  phone?: string;
-}
-
-export interface ICampus extends Document {
-  name: string;
-  address?: string;
-  admins: mongoose.Types.ObjectId[];
-  contact?: ICampusContact;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { ICampus } from "../types/campus.types";
 
 const campusSchema = new Schema<ICampus>(
   {
@@ -27,6 +14,7 @@ const campusSchema = new Schema<ICampus>(
   { timestamps: true }
 );
 
-export const Campus: Model<ICampus> = mongoose.models.Campus || mongoose.model<ICampus>("Campus", campusSchema);
+export const Campus: Model<ICampus> =
+  mongoose.models.Campus || mongoose.model<ICampus>("Campus", campusSchema);
 
 export default Campus;

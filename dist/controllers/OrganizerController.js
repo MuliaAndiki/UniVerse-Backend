@@ -5,16 +5,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Organizer_1 = __importDefault(require("../models/Organizer"));
 const Campus_1 = __importDefault(require("../models/Campus"));
+const auth_1 = require("../middleware/auth");
+const warp_1 = __importDefault(require("../utils/warp"));
 class OrganizerController {
     constructor() {
-        this.create = async (req, res) => {
-            try {
+        this.create = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["campus", "super-admin"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { campusId } = req.params;
                 const { userId, profile, approvedByCampus } = req.body;
                 const campus = await Campus_1.default.findById(campusId);
                 if (!campus) {
-                    res.status(404).json({ message: "Campus not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Campus not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
                 const organizer = await Organizer_1.default.create({
                     userRef: userId,
@@ -22,68 +31,109 @@ class OrganizerController {
                     profile,
                     approvedByCampus: !!approvedByCampus,
                 });
-                res.status(201).json(organizer);
-            }
-            catch (error) {
-                res.status(500).json({ message: "Internal Server Error", error: error.message });
-            }
-        };
-        this.list = async (_req, res) => {
-            try {
-                const { campusId } = _req.query;
+                res.status(201).json({
+                    code: 201,
+                    status: "success",
+                    message: "Organizer created",
+                    data: organizer,
+                    errors: null,
+                });
+            }),
+        ];
+        this.list = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["campus", "super-admin"]),
+            (0, warp_1.default)(async (req, res) => {
+                const { campusId } = req.query;
                 const q = {};
                 if (campusId)
                     q.campusRef = campusId;
-                const docs = await Organizer_1.default.find(q).populate("userRef").populate("campusRef");
-                res.json({ data: docs, total: docs.length });
-            }
-            catch (error) {
-                res.status(500).json({ message: "Internal Server Error", error: error.message });
-            }
-        };
-        this.detail = async (req, res) => {
-            try {
+                const docs = await Organizer_1.default.find(q)
+                    .populate("userRef")
+                    .populate("campusRef");
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Organizer list fetched",
+                    data: docs,
+                    errors: null,
+                });
+            }),
+        ];
+        this.detail = [
+            auth_1.verifyToken,
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
-                const org = await Organizer_1.default.findById(id).populate("userRef").populate("campusRef");
+                const org = await Organizer_1.default.findById(id)
+                    .populate("userRef")
+                    .populate("campusRef");
                 if (!org) {
-                    res.status(404).json({ message: "Organizer not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Organizer not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.json(org);
-            }
-            catch (error) {
-                res.status(500).json({ message: "Internal Server Error", error: error.message });
-            }
-        };
-        this.update = async (req, res) => {
-            try {
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Organizer detail fetched",
+                    data: org,
+                    errors: null,
+                });
+            }),
+        ];
+        this.update = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["campus", "super-admin"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
                 const { profile, status, approvedByCampus } = req.body;
                 const org = await Organizer_1.default.findByIdAndUpdate(id, { $set: { profile, status, approvedByCampus } }, { new: true });
                 if (!org) {
-                    res.status(404).json({ message: "Organizer not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Organizer not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.json(org);
-            }
-            catch (error) {
-                res.status(500).json({ message: "Internal Server Error", error: error.message });
-            }
-        };
-        this.remove = async (req, res) => {
-            try {
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Organizer updated",
+                    data: org,
+                    errors: null,
+                });
+            }),
+        ];
+        this.remove = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["campus", "super-admin"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
                 const del = await Organizer_1.default.findByIdAndDelete(id);
                 if (!del) {
-                    res.status(404).json({ message: "Organizer not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Organizer not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.status(204).send();
-            }
-            catch (error) {
-                res.status(500).json({ message: "Internal Server Error", error: error.message });
-            }
-        };
+                res.status(200).json({
+                    code: 200,
+                    status: "success",
+                    message: "Organizer removed",
+                    data: null,
+                    errors: null,
+                });
+            }),
+        ];
     }
 }
 exports.default = new OrganizerController();

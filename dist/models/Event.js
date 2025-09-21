@@ -38,8 +38,16 @@ const mongoose_1 = __importStar(require("mongoose"));
 const eventSchema = new mongoose_1.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
-    category: { type: String, enum: ["webinar", "festival", "perlombaan"], required: true },
-    organizerRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "Organizer", required: true },
+    category: {
+        type: String,
+        enum: ["webinar", "festival", "perlombaan"],
+        required: true,
+    },
+    organizerRef: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "Organizer",
+        required: true,
+    },
     campusRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "Campus", required: true },
     location: { type: String, required: true },
     startAt: { type: Date, required: true },
@@ -48,7 +56,11 @@ const eventSchema = new mongoose_1.Schema({
     price: { type: Number, required: true, min: 0 },
     images: [{ type: String }],
     googleCalendarId: { type: String },
-    status: { type: String, enum: ["draft", "published", "cancelled", "completed"], default: "draft" },
+    status: {
+        type: String,
+        enum: ["draft", "published", "cancelled", "completed"],
+        default: "draft",
+    },
 }, { timestamps: true });
 exports.Event = mongoose_1.default.models.Event || mongoose_1.default.model("Event", eventSchema);
 exports.default = exports.Event;

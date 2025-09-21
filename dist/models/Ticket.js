@@ -40,7 +40,11 @@ const ticketSchema = new mongoose_1.Schema({
     eventRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "Event", required: true },
     buyerRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     pricePaid: { type: Number, required: true },
-    paymentStatus: { type: String, enum: ["pending", "paid", "expired", "cancelled"], default: "pending" },
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "paid", "expired", "cancelled"],
+        default: "pending",
+    },
     midtransOrderId: { type: String, required: true, unique: true },
     qrUrl: { type: String },
     used: { type: Boolean, default: false },

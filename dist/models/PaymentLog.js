@@ -40,5 +40,6 @@ const paymentLogSchema = new mongoose_1.Schema({
     midtransStatus: { type: String },
     rawPayload: { type: mongoose_1.Schema.Types.Mixed },
 }, { timestamps: true });
-exports.PaymentLog = mongoose_1.default.models.PaymentLog || mongoose_1.default.model("PaymentLog", paymentLogSchema);
+exports.PaymentLog = mongoose_1.default.models.PaymentLog ||
+    mongoose_1.default.model("PaymentLog", paymentLogSchema);
 exports.default = exports.PaymentLog;

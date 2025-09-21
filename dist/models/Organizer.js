@@ -36,11 +36,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Organizer = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const organizerSchema = new mongoose_1.Schema({
-    userRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    userRef: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        unique: true,
+    },
     campusRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "Campus", required: true },
     profile: { bio: { type: String } },
     approvedByCampus: { type: Boolean, default: false },
-    status: { type: String, enum: ["pending", "active", "suspended"], default: "pending" },
+    status: {
+        type: String,
+        enum: ["pending", "active", "suspended"],
+        default: "pending",
+    },
 }, { timestamps: true });
-exports.Organizer = mongoose_1.default.models.Organizer || mongoose_1.default.model("Organizer", organizerSchema);
+exports.Organizer = mongoose_1.default.models.Organizer ||
+    mongoose_1.default.model("Organizer", organizerSchema);
 exports.default = exports.Organizer;

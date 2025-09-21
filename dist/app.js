@@ -16,13 +16,9 @@ const EventRouter_1 = __importDefault(require("./routes/EventRouter"));
 const TicketRouter_1 = __importDefault(require("./routes/TicketRouter"));
 const PaymentRouter_1 = __importDefault(require("./routes/PaymentRouter"));
 const ReportRouter_1 = __importDefault(require("./routes/ReportRouter"));
-const UploadRouter_1 = __importDefault(require("./routes/UploadRouter"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_mongo_sanitize_1 = __importDefault(require("express-mongo-sanitize"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
-// xss-clean doesn't have types; require import
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const xss = require("xss-clean");
 class App {
     constructor() {
         this.app = (0, express_1.default)();
@@ -34,7 +30,6 @@ class App {
         this.app.use((0, cors_1.default)({ origin: "*", optionsSuccessStatus: 200 }));
         this.app.use((0, helmet_1.default)());
         this.app.use((0, express_mongo_sanitize_1.default)());
-        this.app.use(xss());
         this.app.use(express_1.default.urlencoded({ extended: false }));
         this.app.use(body_parser_1.default.json());
         this.app.use(express_1.default.json());
@@ -52,7 +47,6 @@ class App {
         this.app.use("/api", TicketRouter_1.default);
         this.app.use("/api", PaymentRouter_1.default);
         this.app.use("/api", ReportRouter_1.default);
-        this.app.use("/api", UploadRouter_1.default);
     }
     routes() {
         this.app.get("/", (req, res) => {

@@ -1,37 +1,21 @@
 import express from "express";
 import CampusController from "../controllers/CampusController";
-import { verifyToken, requireRole } from "../middleware/auth";
 
 class CampusRouter {
   public campusRouter;
+
   constructor() {
     this.campusRouter = express.Router();
-    this.router();
+    this.routes();
   }
 
-  private router() {
-    this.campusRouter.post(
-      "/",
-      verifyToken,
-      requireRole(["super-admin"]),
-      CampusController.create
-    );
-    this.campusRouter.get(
-      "/",
-      verifyToken,
-      requireRole(["super-admin"]),
-      CampusController.list
-    );
-    // fix
-    // this.campusRouter.get("/:id", verifyToken, requireRole(["super-admin"]), CampusController.detail);
-    // this.campusRouter.put("/:id", verifyToken, requireRole(["super-admin"]), CampusController.update);
-    // this.campusRouter.delete("/:id", verifyToken, requireRole(["super-admin"]), CampusController.remove);
-    // this.campusRouter.get(
-    //   "/:id/reports",
-    //   verifyToken,
-    //   requireRole(["super-admin"]),
-    //   CampusController.reports
-    // );
+  private routes() {
+    this.campusRouter.post("/", CampusController.create);
+    this.campusRouter.get("/", CampusController.list);
+    this.campusRouter.get("/:id", CampusController.detail);
+    this.campusRouter.put("/:id", CampusController.update);
+    this.campusRouter.delete("/:id", CampusController.remove);
+    this.campusRouter.get("/:id/reports", CampusController.reports);
   }
 }
 

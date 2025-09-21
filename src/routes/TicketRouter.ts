@@ -1,6 +1,5 @@
 import express from "express";
 import TicketController from "../controllers/TicketController";
-import { verifyToken, requireRole } from "../middleware/auth";
 
 class TicketRouter {
   public router;
@@ -9,11 +8,11 @@ class TicketRouter {
     this.routes();
   }
   private routes() {
-    this.router.post("/events/:id/purchase", verifyToken, requireRole(["user"]), TicketController.purchase);
-    this.router.get("/tickets/:id", verifyToken, TicketController.detail);
-    this.router.get("/users/:id/tickets", verifyToken, TicketController.listByUser);
-    this.router.post("/tickets/:id/verify", verifyToken, requireRole(["organizer", "campus"]), TicketController.verify);
-    this.router.post("/tickets/:id/cancel", verifyToken, requireRole(["user"]), TicketController.cancel);
+    this.router.post("/events/:id/purchase", TicketController.purchase);
+    this.router.get("/tickets/:id", TicketController.detail);
+    this.router.get("/users/:id/tickets", TicketController.listByUser);
+    this.router.post("/tickets/:id/verify", TicketController.verify);
+    this.router.post("/tickets/:id/cancel", TicketController.cancel);
   }
 }
 

@@ -1,6 +1,5 @@
 import express from "express";
 import UserController from "../controllers/UserController";
-import { verifyToken, requireRole } from "../middleware/auth";
 
 class UsersRouter {
   public router;
@@ -9,10 +8,10 @@ class UsersRouter {
     this.routes();
   }
   private routes() {
-    this.router.get("/", verifyToken, requireRole(["super-admin"]), UserController.list);
-    this.router.get("/:id", verifyToken, UserController.getDetail);
-    this.router.put("/:id", verifyToken, UserController.update);
-    this.router.delete("/:id", verifyToken, requireRole(["super-admin"]), UserController.remove);
+    this.router.get("/", UserController.list);
+    this.router.get("/:id", UserController.getDetail);
+    this.router.put("/:id", UserController.update);
+    this.router.delete("/:id", UserController.remove);
   }
 }
 

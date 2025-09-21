@@ -7,10 +7,14 @@ const Ticket_1 = __importDefault(require("../models/Ticket"));
 const Event_1 = __importDefault(require("../models/Event"));
 const ticket_service_1 = __importDefault(require("../services/ticket.service"));
 const payment_service_1 = __importDefault(require("../services/payment.service"));
+const auth_1 = require("../middleware/auth");
+const warp_1 = __importDefault(require("../utils/warp"));
 class TicketController {
     constructor() {
-        this.purchase = async (req, res) => {
-            try {
+        this.purchase = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["user"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params; // event id
                 const userId = req.user?._id.toString();
                 if (!userId) {
@@ -27,7 +31,6 @@ class TicketController {
                     return;
                 }
                 const ticket = await ticket_service_1.default.createPendingTicket(id, userId);
-                // create Midtrans charge (example: VA)
                 const charge = await payment_service_1.default.chargeVA({
                     order_id: ticket.midtransOrderId,
                     gross_amount: ticket.pricePaid,
@@ -41,13 +44,11 @@ class TicketController {
                     midtransOrderId: ticket.midtransOrderId,
                     payment: charge,
                 });
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.detail = async (req, res) => {
-            try {
+            }),
+        ];
+        this.detail = [
+            auth_1.verifyToken,
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params; // ticket id
                 const ticket = await Ticket_1.default.findById(id).populate({ path: "eventRef" });
                 if (!ticket) {
@@ -55,23 +56,20 @@ class TicketController {
                     return;
                 }
                 res.json(ticket);
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.listByUser = async (req, res) => {
-            try {
+            }),
+        ];
+        this.listByUser = [
+            auth_1.verifyToken,
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params; // user id
                 const docs = await Ticket_1.default.find({ buyerRef: id }).populate("eventRef");
                 res.json({ data: docs, total: docs.length });
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.verify = async (req, res) => {
-            try {
+            }),
+        ];
+        this.verify = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["organizer", "campus"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params; // ticket id
                 const ticket = await Ticket_1.default.findById(id).populate({ path: "eventRef" });
                 if (!ticket) {
@@ -96,13 +94,12 @@ class TicketController {
                 ticket.usedAt = new Date();
                 await ticket.save();
                 res.json({ valid: true, ticket });
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.cancel = async (req, res) => {
-            try {
+            }),
+        ];
+        this.cancel = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["user"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params; // ticket id
                 const ticket = await Ticket_1.default.findById(id).populate({ path: "eventRef" });
                 if (!ticket) {
@@ -121,11 +118,8 @@ class TicketController {
                 ticket.paymentStatus = "cancelled";
                 await ticket.save();
                 res.json({ cancelled: true });
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
+            }),
+        ];
     }
 }
 exports.default = new TicketController();

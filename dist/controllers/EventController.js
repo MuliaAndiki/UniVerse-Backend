@@ -6,32 +6,53 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Event_1 = __importDefault(require("../models/Event"));
 const Organizer_1 = __importDefault(require("../models/Organizer"));
 const googleCalendar_1 = require("../utils/googleCalendar");
+const auth_1 = require("../middleware/auth");
+const warp_1 = __importDefault(require("../utils/warp"));
 class EventController {
     constructor() {
-        this.create = async (req, res) => {
-            try {
+        this.create = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["organizer", "campus"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { orgId } = req.params;
                 const organizer = await Organizer_1.default.findById(orgId);
                 if (!organizer) {
-                    res.status(404).json({ message: "Organizer not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Organizer not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                const { title, description, category, location, startAt, endAt, capacity, price, images } = req.body;
+                const { title, description, category, location, startAt, endAt, capacity, price, images, } = req.body;
                 const event = await Event_1.default.create({
-                    title, description, category, location,
-                    startAt, endAt, capacity, price, images: images || [],
+                    title,
+                    description,
+                    category,
+                    location,
+                    startAt,
+                    endAt,
+                    capacity,
+                    price,
+                    images: images || [],
                     organizerRef: organizer._id,
                     campusRef: organizer.campusRef,
                     status: "draft",
                 });
-                // Google Calendar (optional; uses global creds)
+                // Optional: sync ke Google Calendar
                 try {
                     const clientId = process.env.GOOGLE_CLIENT_ID;
                     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
                     const redirectUri = process.env.GOOGLE_CALENDAR_REDIRECT_URI;
                     const refreshToken = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN;
                     if (clientId && clientSecret && redirectUri && refreshToken) {
-                        const calendar = (0, googleCalendar_1.getCalendarClient)({ clientId, clientSecret, redirectUri, refreshToken });
+                        const calendar = (0, googleCalendar_1.getCalendarClient)({
+                            clientId,
+                            clientSecret,
+                            redirectUri,
+                            refreshToken,
+                        });
                         const gcal = await calendar.events.insert({
                             calendarId: "primary",
                             requestBody: {
@@ -49,18 +70,20 @@ class EventController {
                     }
                 }
                 catch (e) {
-                    // non-blocking
                     console.warn("Google Calendar create failed:", e.message);
                 }
-                res.status(201).json(event);
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.list = async (req, res) => {
-            try {
-                const { campus, category, startFrom, startTo, priceMin, priceMax, status, page = 1, limit = 20 } = req.query;
+                res.status(201).json({
+                    code: 201,
+                    status: "success",
+                    message: "Event created",
+                    data: event,
+                    errors: null,
+                });
+            }),
+        ];
+        this.list = [
+            (0, warp_1.default)(async (req, res) => {
+                const { campus, category, startFrom, startTo, priceMin, priceMax, status, page = 1, limit = 20, } = req.query;
                 const q = {};
                 if (campus)
                     q.campusRef = campus;
@@ -83,86 +106,146 @@ class EventController {
                         q.price.$lte = Number(priceMax);
                 }
                 const skip = (Number(page) - 1) * Number(limit);
-                const [data, total] = await Promise.all([
-                    Event_1.default.find(q).skip(skip).limit(Number(limit)).sort({ startAt: 1 }).populate("organizerRef").populate("campusRef"),
+                const [data, totalData] = await Promise.all([
+                    Event_1.default.find(q)
+                        .skip(skip)
+                        .limit(Number(limit))
+                        .sort({ startAt: 1 })
+                        .populate("organizerRef")
+                        .populate("campusRef"),
                     Event_1.default.countDocuments(q),
                 ]);
-                res.json({ data, total, page: Number(page), limit: Number(limit) });
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.detail = async (req, res) => {
-            try {
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Daftar event berhasil diambil",
+                    data,
+                    totalData,
+                    totalPages: Math.ceil(totalData / Number(limit)),
+                    errors: null,
+                });
+            }),
+        ];
+        this.detail = [
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
-                const doc = await Event_1.default.findById(id).populate("organizerRef").populate("campusRef");
+                const doc = await Event_1.default.findById(id)
+                    .populate("organizerRef")
+                    .populate("campusRef");
                 if (!doc) {
-                    res.status(404).json({ message: "Event not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Event not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.json(doc);
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.update = async (req, res) => {
-            try {
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Detail event berhasil diambil",
+                    data: doc,
+                    errors: null,
+                });
+            }),
+        ];
+        this.update = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["organizer", "campus"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
                 const doc = await Event_1.default.findByIdAndUpdate(id, { $set: req.body }, { new: true });
                 if (!doc) {
-                    res.status(404).json({ message: "Event not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Event not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.json(doc);
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.remove = async (req, res) => {
-            try {
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Event berhasil diupdate",
+                    data: doc,
+                    errors: null,
+                });
+            }),
+        ];
+        this.remove = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["organizer", "campus"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
                 const del = await Event_1.default.findByIdAndDelete(id);
                 if (!del) {
-                    res.status(404).json({ message: "Event not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Event not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.status(204).send();
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.publish = async (req, res) => {
-            try {
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Event berhasil dihapus",
+                    data: del,
+                    errors: null,
+                });
+            }),
+        ];
+        this.publish = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["organizer", "campus"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
                 const doc = await Event_1.default.findByIdAndUpdate(id, { $set: { status: "published" } }, { new: true });
                 if (!doc) {
-                    res.status(404).json({ message: "Event not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Event not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.json(doc);
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
-        this.cancel = async (req, res) => {
-            try {
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Event berhasil dipublish",
+                    data: doc,
+                    errors: null,
+                });
+            }),
+        ];
+        this.cancel = [
+            auth_1.verifyToken,
+            (0, auth_1.requireRole)(["organizer", "campus"]),
+            (0, warp_1.default)(async (req, res) => {
                 const { id } = req.params;
                 const doc = await Event_1.default.findByIdAndUpdate(id, { $set: { status: "cancelled" } }, { new: true });
                 if (!doc) {
-                    res.status(404).json({ message: "Event not found" });
-                    return;
+                    return res.status(404).json({
+                        code: 404,
+                        status: "error",
+                        message: "Event not found",
+                        data: null,
+                        errors: null,
+                    });
                 }
-                res.json(doc);
-            }
-            catch (error) {
-                res.status(500).json({ message: error.message });
-            }
-        };
+                res.json({
+                    code: 200,
+                    status: "success",
+                    message: "Event berhasil dicancel",
+                    data: doc,
+                    errors: null,
+                });
+            }),
+        ];
     }
 }
 exports.default = new EventController();

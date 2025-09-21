@@ -1,12 +1,5 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
-
-export interface IPaymentLog extends Document {
-  orderId: string;
-  midtransStatus?: string;
-  rawPayload?: any;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import mongoose, { Schema, Model } from "mongoose";
+import { IPaymentLog } from "../types/payment.types";
 
 const paymentLogSchema = new Schema<IPaymentLog>(
   {
@@ -18,6 +11,7 @@ const paymentLogSchema = new Schema<IPaymentLog>(
 );
 
 export const PaymentLog: Model<IPaymentLog> =
-  mongoose.models.PaymentLog || mongoose.model<IPaymentLog>("PaymentLog", paymentLogSchema);
+  mongoose.models.PaymentLog ||
+  mongoose.model<IPaymentLog>("PaymentLog", paymentLogSchema);
 
 export default PaymentLog;

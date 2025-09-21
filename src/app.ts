@@ -11,14 +11,9 @@ import EventRouter from "./routes/EventRouter";
 import TicketRouter from "./routes/TicketRouter";
 import PaymentRouter from "./routes/PaymentRouter";
 import ReportRouter from "./routes/ReportRouter";
-import UploadRouter from "./routes/UploadRouter";
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import rateLimit from "express-rate-limit";
-// xss-clean doesn't have types; require import
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const xss = require("xss-clean");
-
 class App {
   public app: Application;
 
@@ -33,7 +28,6 @@ class App {
     this.app.use(cors({ origin: "*", optionsSuccessStatus: 200 }));
     this.app.use(helmet());
     this.app.use(mongoSanitize());
-    this.app.use(xss());
     this.app.use(express.urlencoded({ extended: false }));
     this.app.use(bodyParser.json());
     this.app.use(express.json());
@@ -54,7 +48,6 @@ class App {
     this.app.use("/api", TicketRouter);
     this.app.use("/api", PaymentRouter);
     this.app.use("/api", ReportRouter);
-    this.app.use("/api", UploadRouter);
   }
 
   private routes(): void {
