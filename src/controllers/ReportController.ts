@@ -7,6 +7,7 @@ import { verifyToken, requireRole } from "../middleware/auth";
 import warp from "../utils/warp";
 
 class ReportController {
+  //check
   public superAdmin = [
     verifyToken,
     requireRole(["super-admin"]),

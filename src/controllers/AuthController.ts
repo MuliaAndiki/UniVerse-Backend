@@ -26,6 +26,7 @@ import { uploadCloudinary } from "../utils/uploadClodinary";
 import { uploadImages } from "../middleware/multer";
 import { OAuth2Client } from "google-auth-library";
 import { Document } from "mongoose";
+import bcryptjs from "bcryptjs";
 
 const CLIENT_ID = env.GOOGLE_CLIENT_ID!;
 const JWT_SECRET = env.JWT_SECRET!;
@@ -70,6 +71,7 @@ class AuthController {
         const newAuth = new Auth({
           email: auth.email,
           password: hash,
+          phoneNumber: auth.phoneNumber,
           fullName: auth.fullName,
           role: auth.role,
           otp: otp,
@@ -98,17 +100,18 @@ class AuthController {
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
       const auth: PickLogin = req.body;
+
       if (!auth.email || !auth.password) {
         res.status(400).json({
           status: 400,
-          message: "Mohon Isi Semua Kolum",
+          message: "All field is required",
         });
+        return;
       }
 
       const isAuthExist: IAuth | null = await Auth.findOne({
         email: auth.email,
       });
-
       if (!isAuthExist) {
         res.status(404).json({
           status: 404,
@@ -117,12 +120,15 @@ class AuthController {
         return;
       }
 
-      const isMatch = await bcrypt.compare(auth.password, isAuthExist.password);
-      if (!isMatch) {
-        res.status(401).json({
-          status: 401,
-          message: "Invalid credentials",
-        });
+      const validateAuth = await bcryptjs.compare(
+        auth.password,
+        isAuthExist.password
+      );
+
+      if (!validateAuth) {
+        res
+          .status(400)
+          .json({ status: 400, message: "Wrong email or password" });
         return;
       }
 
@@ -130,10 +136,10 @@ class AuthController {
         _id: isAuthExist._id,
         email: isAuthExist.email,
         fullName: isAuthExist.fullName,
-        role: isAuthExist.role,
+        role: (isAuthExist as any).role,
       };
 
-      if (!env.JWT_SECRET) {
+      if (!process.env.JWT_SECRET) {
         console.error("JWT_SECRET is not defined in environment variables");
         res.status(500).json({
           status: 500,
@@ -141,10 +147,9 @@ class AuthController {
         });
         return;
       }
-
       jwt.sign(
         payload,
-        env.JWT_SECRET,
+        process.env.JWT_SECRET,
         { expiresIn: "1d" },
         async (err, token): Promise<void> => {
           if (err) {
@@ -156,24 +161,22 @@ class AuthController {
           await isAuthExist.save();
           res.status(200).json({
             status: 200,
-            data: {
-              isAuthExist,
-              token,
-            },
+            data: isAuthExist,
             message: "Login successfully",
           });
+
           return;
         }
       );
     } catch (error) {
       res.status(500).json({
         status: 500,
-        message: "Server Internal Error",
-        error: error instanceof Error ? error.message : error,
+        message: "Internal server error",
       });
       return;
     }
   };
+
   public logout = [
     verifyToken,
     async (req: Request, res: Response): Promise<void> => {

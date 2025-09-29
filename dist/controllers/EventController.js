@@ -10,6 +10,7 @@ const auth_1 = require("../middleware/auth");
 const warp_1 = __importDefault(require("../utils/warp"));
 class EventController {
     constructor() {
+        // Check
         this.create = [
             auth_1.verifyToken,
             (0, auth_1.requireRole)(["organizer", "campus"]),

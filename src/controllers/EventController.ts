@@ -6,6 +6,7 @@ import { verifyToken, requireRole } from "../middleware/auth";
 import warp from "../utils/warp";
 
 class EventController {
+  // Check
   public create = [
     verifyToken,
     requireRole(["organizer", "campus"]),

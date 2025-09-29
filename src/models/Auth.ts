@@ -29,6 +29,10 @@ const AuthSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    token: {
+      type: String,
+      default: null,
+    },
     methotPayment: {
       type: String,
       enum: PaymentMethod,

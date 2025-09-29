@@ -5,6 +5,7 @@ import { verifyToken, requireRole } from "../middleware/auth";
 import warp from "../utils/warp";
 
 class OrganizerController {
+  //check
   public create = [
     verifyToken,
     requireRole(["campus", "super-admin"]),

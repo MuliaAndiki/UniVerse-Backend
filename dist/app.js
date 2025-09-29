@@ -6,9 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
-const AuthRouter_1 = __importDefault(require("./routes/AuthRouter"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const node_cron_1 = __importDefault(require("node-cron"));
-const AuthController_1 = __importDefault(require("./controllers/AuthController"));
+const AuthRouter_1 = __importDefault(require("./routes/AuthRouter"));
 const CampusRouter_1 = __importDefault(require("./routes/CampusRouter"));
 const UsersRouter_1 = __importDefault(require("./routes/UsersRouter"));
 const OrganizerRouter_1 = __importDefault(require("./routes/OrganizerRouter"));
@@ -16,30 +16,24 @@ const EventRouter_1 = __importDefault(require("./routes/EventRouter"));
 const TicketRouter_1 = __importDefault(require("./routes/TicketRouter"));
 const PaymentRouter_1 = __importDefault(require("./routes/PaymentRouter"));
 const ReportRouter_1 = __importDefault(require("./routes/ReportRouter"));
-const helmet_1 = __importDefault(require("helmet"));
-const express_mongo_sanitize_1 = __importDefault(require("express-mongo-sanitize"));
-const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+const AuthController_1 = __importDefault(require("./controllers/AuthController"));
 class App {
     constructor() {
         this.app = (0, express_1.default)();
         this.middlewares();
         this.routes();
-        this.runCron();
     }
     middlewares() {
         this.app.use((0, cors_1.default)({ origin: "*", optionsSuccessStatus: 200 }));
-        this.app.use((0, helmet_1.default)());
-        this.app.use((0, express_mongo_sanitize_1.default)());
         this.app.use(express_1.default.urlencoded({ extended: false }));
         this.app.use(body_parser_1.default.json());
         this.app.use(express_1.default.json());
+        this.app.use(express_1.default.json());
         this.app.use(express_1.default.urlencoded({ extended: true }));
-        // Rate limiting for auth & payments
         const authLimiter = (0, express_rate_limit_1.default)({ windowMs: 15 * 60 * 1000, max: 100 });
         const paymentLimiter = (0, express_rate_limit_1.default)({ windowMs: 15 * 60 * 1000, max: 200 });
         this.app.use("/api/auth", authLimiter, AuthRouter_1.default);
         this.app.use("/api/payments", paymentLimiter);
-        // Routers
         this.app.use("/api/campus", CampusRouter_1.default);
         this.app.use("/api", UsersRouter_1.default);
         this.app.use("/api", OrganizerRouter_1.default);

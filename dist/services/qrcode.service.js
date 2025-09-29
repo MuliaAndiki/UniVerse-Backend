@@ -7,7 +7,10 @@ exports.QRCodeService = void 0;
 const qrcode_1 = __importDefault(require("qrcode"));
 class QRCodeService {
     static async generate(data) {
-        const buffer = await qrcode_1.default.toBuffer(data, { type: "png", errorCorrectionLevel: "H" });
+        const buffer = await qrcode_1.default.toBuffer(data, {
+            type: "png",
+            errorCorrectionLevel: "H",
+        });
         return buffer;
     }
 }
