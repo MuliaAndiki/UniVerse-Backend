@@ -3,7 +3,6 @@ import { ITicket } from "../types/ticket.types";
 
 const ticketSchema = new Schema<ITicket>(
   {
-    ticketId: { type: String, required: true, unique: true },
     eventRef: { type: Schema.Types.ObjectId, ref: "Event", required: true },
     buyerRef: { type: Schema.Types.ObjectId, ref: "User", required: true },
     pricePaid: { type: Number, required: true },

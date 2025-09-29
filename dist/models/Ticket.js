@@ -36,7 +36,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ticket = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const ticketSchema = new mongoose_1.Schema({
-    ticketId: { type: String, required: true, unique: true },
     eventRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "Event", required: true },
     buyerRef: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     pricePaid: { type: Number, required: true },

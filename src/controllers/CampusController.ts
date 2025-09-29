@@ -7,6 +7,7 @@ import { verifyToken, requireRole } from "../middleware/auth";
 import warp from "../utils/warp";
 
 class CampusController {
+  // Fix
   public create = [
     verifyToken,
     requireRole(["super-admin"]),

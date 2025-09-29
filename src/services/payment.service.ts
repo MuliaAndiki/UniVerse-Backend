@@ -33,7 +33,10 @@ export class PaymentService {
         order_id: params.order_id,
         gross_amount: params.gross_amount,
       },
-      gopay: { enable_callback: true, callback_url: "https://example.com/finish" },
+      gopay: {
+        enable_callback: true,
+        callback_url: "https://example.com/finish",
+      },
     } as any;
 
     const res = await core.charge(payload);

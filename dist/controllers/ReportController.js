@@ -11,6 +11,7 @@ const auth_1 = require("../middleware/auth");
 const warp_1 = __importDefault(require("../utils/warp"));
 class ReportController {
     constructor() {
+        //check
         this.superAdmin = [
             auth_1.verifyToken,
             (0, auth_1.requireRole)(["super-admin"]),

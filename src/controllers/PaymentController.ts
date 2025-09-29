@@ -6,6 +6,7 @@ import { verifyToken, requireRole } from "../middleware/auth";
 import warp from "../utils/warp";
 
 class PaymentController {
+  // Check
   public charge = [
     verifyToken,
     requireRole(["user"]),

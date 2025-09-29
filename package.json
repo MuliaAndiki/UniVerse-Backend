@@ -21,7 +21,7 @@
     "midtrans-client": "^1.4.3",
     "mongoose": "^8.15.0",
     "multer": "^2.0.2",
-    "nanoid": "^5.1.5",
+    "nanoid": "^5.1.6",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.6",
     "qrcode": "^1.5.4",

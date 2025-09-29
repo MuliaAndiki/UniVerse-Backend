@@ -13,6 +13,7 @@ const mailer_1 = require("../utils/mailer");
 const uploadClodinary_1 = require("../utils/uploadClodinary");
 const multer_1 = require("../middleware/multer");
 const google_auth_library_1 = require("google-auth-library");
+const bcryptjs_2 = __importDefault(require("bcryptjs"));
 const CLIENT_ID = env_config_1.env.GOOGLE_CLIENT_ID;
 const JWT_SECRET = env_config_1.env.JWT_SECRET;
 const CLIENT = new google_auth_library_1.OAuth2Client(CLIENT_ID);
@@ -51,6 +52,7 @@ class AuthController {
                     const newAuth = new Auth_1.default({
                         email: auth.email,
                         password: hash,
+                        phoneNumber: auth.phoneNumber,
                         fullName: auth.fullName,
                         role: auth.role,
                         otp: otp,
@@ -80,8 +82,9 @@ class AuthController {
                 if (!auth.email || !auth.password) {
                     res.status(400).json({
                         status: 400,
-                        message: "Mohon Isi Semua Kolum",
+                        message: "All field is required",
                     });
+                    return;
                 }
                 const isAuthExist = await Auth_1.default.findOne({
                     email: auth.email,
@@ -93,12 +96,11 @@ class AuthController {
                     });
                     return;
                 }
-                const isMatch = await bcryptjs_1.default.compare(auth.password, isAuthExist.password);
-                if (!isMatch) {
-                    res.status(401).json({
-                        status: 401,
-                        message: "Invalid credentials",
-                    });
+                const validateAuth = await bcryptjs_2.default.compare(auth.password, isAuthExist.password);
+                if (!validateAuth) {
+                    res
+                        .status(400)
+                        .json({ status: 400, message: "Wrong email or password" });
                     return;
                 }
                 const payload = {
@@ -107,7 +109,7 @@ class AuthController {
                     fullName: isAuthExist.fullName,
                     role: isAuthExist.role,
                 };
-                if (!env_config_1.env.JWT_SECRET) {
+                if (!process.env.JWT_SECRET) {
                     console.error("JWT_SECRET is not defined in environment variables");
                     res.status(500).json({
                         status: 500,
@@ -115,7 +117,7 @@ class AuthController {
                     });
                     return;
                 }
-                jsonwebtoken_1.default.sign(payload, env_config_1.env.JWT_SECRET, { expiresIn: "1d" }, async (err, token) => {
+                jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, { expiresIn: "1d" }, async (err, token) => {
                     if (err) {
                         res.status(500).json(err);
                         return;
@@ -124,10 +126,7 @@ class AuthController {
                     await isAuthExist.save();
                     res.status(200).json({
                         status: 200,
-                        data: {
-                            isAuthExist,
-                            token,
-                        },
+                        data: isAuthExist,
                         message: "Login successfully",
                     });
                     return;
@@ -136,8 +135,7 @@ class AuthController {
             catch (error) {
                 res.status(500).json({
                     status: 500,
-                    message: "Server Internal Error",
-                    error: error instanceof Error ? error.message : error,
+                    message: "Internal server error",
                 });
                 return;
             }

@@ -4,18 +4,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TicketService = void 0;
-const nanoid_1 = require("nanoid");
 const Ticket_1 = __importDefault(require("../models/Ticket"));
 const Event_1 = __importDefault(require("../models/Event"));
 const qrcode_service_1 = require("./qrcode.service");
 const uploadClodinary_1 = require("../utils/uploadClodinary");
+const crypto_1 = __importDefault(require("crypto"));
+const generateRandomString = (length = 10) => {
+    return crypto_1.default
+        .randomBytes(Math.ceil(length / 2))
+        .toString("hex")
+        .slice(0, length)
+        .toUpperCase();
+};
 class TicketService {
     static async createPendingTicket(eventId, buyerId) {
         const event = await Event_1.default.findById(eventId);
         if (!event)
             throw new Error("Event not found");
-        const ticketId = `TCKT_${(0, nanoid_1.nanoid)(10)}`;
-        const midtransOrderId = `ORD_${(0, nanoid_1.nanoid)(12)}`;
+        const ticketId = `TCKT_${generateRandomString(10)}`;
+        const midtransOrderId = `ORD_${generateRandomString(12)}`;
         const ticket = await Ticket_1.default.create({
             ticketId,
             eventRef: event._id,

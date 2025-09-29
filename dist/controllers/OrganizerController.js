@@ -9,6 +9,7 @@ const auth_1 = require("../middleware/auth");
 const warp_1 = __importDefault(require("../utils/warp"));
 class OrganizerController {
     constructor() {
+        //check
         this.create = [
             auth_1.verifyToken,
             (0, auth_1.requireRole)(["campus", "super-admin"]),
